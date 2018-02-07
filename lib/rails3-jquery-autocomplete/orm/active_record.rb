@@ -28,6 +28,22 @@ module Rails3JQueryAutocomplete
             limit(limit).order(order)
         items = items.where(where) unless where.blank?
 
+        if options[:unique]
+          scopes << lambda do
+            select = "MIN(#{model.primary_key}) as #{model.primary_key}, #{method}"
+            unscope(:select).select(select).group(method)
+          end
+        end
+
+        scopes.each do |scope|
+          items = case scope
+                  when String
+                    items.send(scope)
+                  when Proc
+                    items.instance_exec(&scope)
+                  end
+        end
+
         items
       end
 
